@@ -1,0 +1,45 @@
+version: '3.1'
+
+services:
+
+  wordpress:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 8080:8080
+    volumes:
+      - wordpress_data:/var/www/html
+    env_file:
+      - .env.wordpress
+
+  dos-s3sync:
+    build:
+      context: s3sync
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      - wordpress_data:/mnt
+    env_file:
+      - .env.s3-dos.creds
+
+  db:
+    image: docker.io/mariadb:focal
+    restart: always
+    ports:
+      - 3306:3306
+    volumes:
+      - db_data:/var/lib/mysql
+    env_file:
+      - .env.db
+
+volumes:
+  wordpress_data:
+    driver: local
+  db_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
