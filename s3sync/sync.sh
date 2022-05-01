@@ -24,5 +24,5 @@ cd /mnt
 while filename=$(inotifywait -e close_write /mnt | sed 's/.*CLOSE.* //g;') ; do
   echo "Synchronizing ${filename} to ${S3_BUCKET}"
   # TODO make uploaded files public (configurable)
-  ${AWS} s3 cp "${filename}" "${S3_BUCKET}"
+  ${AWS} --quiet s3 cp "${filename}" "${S3_BUCKET}"
 done
