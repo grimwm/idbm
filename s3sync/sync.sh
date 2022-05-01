@@ -21,8 +21,8 @@ ${AWS} s3 sync /mnt "${S3_BUCKET}"
 
 cd /mnt
 # Watch mounted volume for new files and sync them to s3.
-while filename=$(inotifywait -e close_write /mnt | sed 's/.*CLOSE.* //g;') ; do
-  echo "Synchronizing ${filename} to ${S3_BUCKET}"
+while filename=$(inotifywait -q -e close_write /mnt | sed 's/.*CLOSE.* //g;') ; do
+  echo "Copying ${filename} to ${S3_BUCKET}"
   # TODO make uploaded files public (configurable)
   ${AWS} --quiet s3 cp "${filename}" "${S3_BUCKET}"
 done
