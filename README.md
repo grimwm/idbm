@@ -8,7 +8,6 @@ with proper access, how to push updates to the live website.
 
 * [Docker](https://docs.docker.com/get-docker/)
 * [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
-* [doctl](https://docs.digitalocean.com/reference/doctl/how-to/install/)
 * [pre-commit](https://pre-commit.com/)
 
 ## Setup

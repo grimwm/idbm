@@ -13,16 +13,18 @@ services:
       - wordpress_data:/var/www/html
     env_file:
       - .env.wordpress
+    depends_on:
+      - db
+      - dos-s3sync
 
   dos-s3sync:
-    build:
-      context: s3sync
-      dockerfile: Dockerfile
+    image: docker.io/grimwm/s3sync:0.2
     restart: always
     volumes:
       - wordpress_data:/mnt
     env_file:
-      - .env.s3-dos.creds
+      - .env.s3sync-dos
+      - .env.s3sync-dos.creds
 
   db:
     image: docker.io/mariadb:focal
@@ -38,8 +40,4 @@ volumes:
   wordpress_data:
     driver: local
   db_data:
-    driver: local
-  zookeeper_data:
-    driver: local
-  kafka_data:
     driver: local
