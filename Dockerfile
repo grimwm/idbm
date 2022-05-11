@@ -1,4 +1,4 @@
-FROM bitnami/wordpress
+FROM docker.io/bitnami/wordpress:5.9.3
 
 # Some credit goes to:
 # https://www.linode.com/community/questions/16977/server-fails-after-installing-certbot-mpm-run-failed-exiting#answer-66578

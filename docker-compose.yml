@@ -1,27 +1,26 @@
-version: '3.1'
+version: '3.8'
 
 services:
 
   wordpress:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     restart: always
     ports:
       - 8080:8080
     volumes:
-      - wordpress_data:/var/www/html
+      - wp_data:/bitnami/wordpress
     env_file:
       - .env.wordpress
+      - .env.wordpress.creds
     depends_on:
       - db
       - dos-s3sync
 
   dos-s3sync:
-    image: docker.io/grimwm/s3sync:0.2
+    image: docker.io/grimwm/s3sync:0.4
     restart: always
     volumes:
-      - wordpress_data:/mnt
+      - wp_data:/mnt
     env_file:
       - .env.s3sync-dos
       - .env.s3sync-dos.creds
@@ -37,7 +36,7 @@ services:
       - .env.db
 
 volumes:
-  wordpress_data:
+  wp_data:
     driver: local
   db_data:
     driver: local
