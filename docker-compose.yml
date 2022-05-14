@@ -7,6 +7,7 @@ services:
     restart: always
     ports:
       - 8080:8080
+      - 8443:8443
     volumes:
       - wp_data:/bitnami/wordpress
     env_file:
@@ -16,14 +17,14 @@ services:
       - db
       - dos-s3sync
 
-  dos-s3sync:
+  s3sync:
     image: docker.io/grimwm/s3sync:0.4
     restart: always
     volumes:
       - wp_data:/mnt
     env_file:
-      - .env.s3sync-dos
-      - .env.s3sync-dos.creds
+      - .env.s3sync
+      - .env.s3sync.creds
 
   db:
     image: docker.io/mariadb:focal
