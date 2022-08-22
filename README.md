@@ -69,7 +69,7 @@ After any changes here that need to be reflected in the published DOCR image,
 just use the following commands:
 
 ```sh
-docker compose build .
+docker compose build
 docker tag <image_id> registry.digitalocean.com/grim/wordpress:<wordpress_version>.<minor>
 docker push registry.digitalocean.com/grim/wordpress:<wordpress_version>.<minor>
 ```

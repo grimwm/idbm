@@ -12,19 +12,8 @@ services:
       - wp_data:/bitnami/wordpress
     env_file:
       - .env.wordpress
-      - .env.wordpress.creds
     depends_on:
       - db
-      - dos-s3sync
-
-  s3sync:
-    image: docker.io/grimwm/s3sync:0.4
-    restart: always
-    volumes:
-      - wp_data:/mnt
-    env_file:
-      - .env.s3sync
-      - .env.s3sync.creds
 
   db:
     image: docker.io/mariadb:focal
