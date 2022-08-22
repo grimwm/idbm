@@ -19,6 +19,12 @@ resource "digitalocean_database_cluster" "wordpress" {
   node_count = 1
 }
 
+# Create a db inside the cluster
+resource "digitalocean_database_db" "wordpress" {
+  cluster_id = digitalocean_database_cluster.wordpress.id
+  name = "wordpress"
+}
+
 # Create a k8s cluster
 data "digitalocean_kubernetes_versions" "idbm" {
   version_prefix = "1.23."
