@@ -6,13 +6,15 @@ DB_PREFIX=prestashop
 DOMAIN=
 
 DO_SSL=0
-MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-}"
+#MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-}"
 MYSQL_USER_NAME="${MYSQL_USER_NAME:-}"
 MYSQL_USER_PASSWORD="${MYSQL_USER_PASSWORD:-}"
 
 HTTPD_WWW_ROOT_DIR=/var/www
 HTTPD_LOG_ROOT_DIR=/var/log/apache2
-HTTPD_SITES_AVAILABLE_DIR="/etc/apache2/sites-available"
+HTTPD_CONF="/etc/nginx/nginx.conf"
+HTTPD_SITES_AVAILABLE_DIR="/etc/nginx/sites-available"
+HTTPD_SITES_ENABLED_DIR="/etc/nginx/sites-enabled"
 
 CLEANUP_FILES_ON_EXIT=()
 
@@ -20,21 +22,26 @@ CLEANUP_FILES_ON_EXIT=()
 trap 'rm -f "${CLEANUP_FILES_ON_EXIT[@]}"' EXIT
 
 declare APT_PACKAGES=(
-  apache2
-  python3-certbot-apache
   jq
   mariadb-server
+  nginx
   php
   php-cli
   php-curl
-  php-zip
+  php-fpm
   php-gd
-  php-mysql
-  php-xml
-  php-mbstring
   php-json
   php-intl
+  php-mbstring
+  php-mysql
+  php-xml
+  php-zip
+  python3-certbot-nginx
   unzip
+)
+
+declare PIP_REQUIREMENTS=(
+  ansible
 )
 
 function usage() {
@@ -78,29 +85,21 @@ function write_httpd_conf() {
   local vhost_dir="$(get_vhost_path "$(echo ${domain} | tr . _)")"
   local tmpfile="$(get_tmpfile .conf)"
 
-  # Generate the httpd virtualhost config.
+  # Generate the nginx server block for the vhost.
   cat >"${tmpfile}" <<EOF
-<VirtualHost *:80>
-  ServerAdmin webmaster@${domain}
-  ServerName ${domain}
-  ServerAlias www.${domain}
-  DocumentRoot ${vhost_dir}
+server {
+  listen 80;
+  listen [::]:80;
 
-  <Directory "${vhost_dir}">
-    Options +FollowSymlinks
-    AllowOverride All
-    Require all granted
-  </Directory>
+  server_name ${domain}
 
-  #ErrorLog ${HTTPD_LOG_ROOT_DIR}/${domain}-error_log
-  #CustomLog ${HTTPD_LOG_ROOT_DIR}/${domain}-access_log common
-  ErrorLog \${APACHE_LOG_DIR}/${domain}-error_log
-  CustomLog \${APACHE_LOG_DIR}/${domain}-access_log common
+  root /var/www/${domain}/html;
+  index index.php index.html;
 
-  RewriteEngine on
-  RewriteCond %{SERVER_NAME} =yourinterior.space
-  RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
-</VirtualHost>
+  location / {
+    try_files $uri $uri/ =404;
+  }
+}
 EOF
 
   sudo mv "${tmpfile}" "${httpd_conf}"
@@ -112,6 +111,10 @@ function install_packages() {
   sudo apt update
   sudo apt -y upgrade
   sudo apt -y install "${APT_PACKAGES[@]}"
+}
+
+function install_pip_requirements() {
+  pip install "${PIP_REQUIREMENTS[@]}"
 }
 
 function setup_php_ini() {
@@ -206,6 +209,7 @@ function main() {
   local database="${DB_PREFIX}__$(echo "${DOMAIN}" | tr . _)"
 
   install_packages
+  install_pip_requirements
   setup_php_ini
   install_prestashop "${DOMAIN}"
 
@@ -216,11 +220,12 @@ function main() {
   # Setup Prestashop.
   write_httpd_conf "${DOMAIN}"
 
-  sudo a2enmod rewrite
+  sudo ln -s "${HTTPD_SITES_AVAILABLE_DIR}/${DOMAIN}.conf" "${HTTPD_SITES_ENABLED_DIR}/${DOMAIN}.conf"
 
-  sudo a2ensite "${DOMAIN}.conf"
-  sudo a2dissite 000-default.conf
-  sudo systemctl restart apache2
+  sed -i 's/# (server_names_hash_bucket_size)/\1/g;' "${NGINX_CONF}"
+
+  sudo nginx -t
+  sudo systemctl restart nginx
 
   local scheme=http
   if test $DO_SSL -eq 1 ; then
@@ -233,10 +238,10 @@ function main() {
 
 while test $# -ne 0 ; do
   case $1 in
-    --mysql-root-password)
-      MYSQL_ROOT_PASSWORD="$2"
-      shift
-      ;;
+#    --mysql-root-password)
+#      MYSQL_ROOT_PASSWORD="$2"
+#      shift
+#      ;;
     --mysql-user)
       MYSQL_USER_NAME="$2"
       shift
