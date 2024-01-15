@@ -117,6 +117,14 @@ function install_pip_requirements() {
   pip install "${PIP_REQUIREMENTS[@]}"
 }
 
+function install_doctl() {
+  curl 'https://github.com/digitalocean/doctl/releases/download/v1.101.0/doctl-1.101.0-linux-amd64.tar.gz' -O /tmp/doctl.tar.gz
+  pushd /tmp >/dev/null
+  tar xf doctl.tar.gz
+  sudo mv doctl /usr/local/bin
+  popd >/dev/null
+}
+
 function setup_php_ini() {
   local php_ini_file="$(php -i | grep -E '^Loaded.*php.ini$' | awk '{ print $5; }')"
   sudo sed -i 's/memory_limit =.*/memory_limit = 128M/;' "${php_ini_file}"
@@ -210,6 +218,7 @@ function main() {
 
   install_packages
   install_pip_requirements
+  install_doctl
   setup_php_ini
   install_prestashop "${DOMAIN}"
 
