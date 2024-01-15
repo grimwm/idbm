@@ -1,16 +1,22 @@
 # https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs
-resource "digitalocean_project" "playground" {
-  name        = "playground"
+resource "digitalocean_project" "idbm" {
+  name        = "Interior Design by Maryam"
   description = "A project to represent development resources."
-  purpose     = "Web Application"
+  purpose     = "Website or blog"
   environment = "Development"
   resources = [
-    digitalocean_database_cluster.wordpress.urn
+    digitalocean_database_cluster.prestashop.urn,
+    digitalocean_droplet.yourinterior_space.urn
   ]
 }
 
-# Create a mysql cluster
-resource "digitalocean_database_cluster" "wordpress" {
+# Create a mysql cluster.
+#
+# See https://docs.digitalocean.com/reference/api/api-reference/#tag/Databases
+# for information on how to see database slugs.
+#
+# tl;dr: Use `doctl databases options`.
+resource "digitalocean_database_cluster" "mysql" {
   name       = "wordpress"
   engine     = "mysql"
   version    = "8"
@@ -19,40 +25,28 @@ resource "digitalocean_database_cluster" "wordpress" {
   node_count = 1
 }
 
-# Create a db inside the cluster
-resource "digitalocean_database_db" "wordpress" {
-  cluster_id = digitalocean_database_cluster.wordpress.id
-  name = "wordpress"
+# Create a prestashop inside the cluster.
+resource "digitalocean_database_db" "prestashop" {
+  cluster_id = digitalocean_database_cluster.mysql.id
+  name       = "prestashop"
 }
 
-# Create a k8s cluster
-data "digitalocean_kubernetes_versions" "idbm" {
-  version_prefix = "1.23."
+# Create a user inside the database.
+resource "digitalocean_database_user" "prestashop_user" {
+  cluster_id = digitalocean_database_cluster.mysql.id
+  name       = "prestashop"
+  role       = "primary"
+  password   = "prestashop-pw"  # TODO put this in a tfvars file or Vault
 }
 
-resource "digitalocean_kubernetes_cluster" "idbm" {
-  name   = "idbm"
-  region = "nyc3"
-  auto_upgrade = true
-  version = data.digitalocean_kubernetes_versions.idbm.latest_version
+# Create an app container.
+resource "digitalocean_droplet" "yourinterior_space" {
+  image  = "ubuntu-22-04-x64"
+  name   = "yourinterior.space"
+  region = "nyc-3"
+  size   = "s-1vcpu-1gb"
+}
 
-  maintenance_policy {
-    start_time = "04:00"
-    day        = "sunday"
-  }
-
-  node_pool {
-    name       = "worker-pool"
-    size       = "s-2vcpu-2gb"
-    node_count = 1
-    # auto_scale = true
-    # min_nodes = 1
-    # max_nodes = 3
-
-    taint {
-      key    = "workloadKind"
-      value  = "database"
-      effect = "NoSchedule"
-    }
-  }
+resource "digitalocean_domain" "yourinterior_space_cname" {
+  name   = "yourinterior.space"
 }

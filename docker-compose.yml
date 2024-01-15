@@ -1,17 +1,16 @@
 version: '3.8'
 
 services:
-
-  wordpress:
+  prestashop:
     build: .
     restart: always
     ports:
       - 8080:8080
       - 8443:8443
     volumes:
-      - wp_data:/bitnami/wordpress
+      - shop_data:/bitnami/wordpress
     env_file:
-      - .env.wordpress
+      - .env.prestashop
     depends_on:
       - db
 
@@ -26,7 +25,7 @@ services:
       - .env.db
 
 volumes:
-  wp_data:
+  shop_data:
     driver: local
   db_data:
     driver: local
